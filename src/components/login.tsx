@@ -1,34 +1,26 @@
 import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import RegisterForm from "./RegisterForm";
-import { useAuth } from "../services/authContext";
 import { ToastContainer } from "react-toastify";
 import { toastError, toastInfo } from "../utils/toast";
 import "react-toastify/dist/ReactToastify.css";
-
-const loginSchema = Yup.object().shape({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
-});
+import axiosApi from "../utils/interceptor";
+import axios from "axios";
+import { loginSchema } from "../validator/auth";
+import { useAuthStore } from "../store-zustand/useAuthStore";
+import { useNavigate } from "react-router-dom";
 
 const initialValues = {
   email: "",
   password: "",
 };
 
-const url = import.meta.env.BACKEND_URL;
-console.log("Mahesh ", url);
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [signUp, setSignUp] = useState(false);
-  // const { setUser, setToken } = useAuth();
+  const { setToken, setUser } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleSubmit = async (
     values: { email: string; password: string },
@@ -38,12 +30,14 @@ const LoginForm = () => {
     }: { setSubmitting: (isSubmitting: boolean) => void; resetForm: () => void }
   ) => {
     try {
-      const response = await axios.post(`${url}/api/users/login`, values);
+      const response = await axiosApi.post(`/users/login`, values);
       toastInfo("Login successfully");
+      console.log(response.data);
+      setToken(response.data.data.token);
+      setUser(response.data.data.user);
+
       setTimeout(() => {
         localStorage.setItem("Token", response.data.data.token);
-        // setUser(response.data.data.user);
-        // setToken(response.data.data.token);
         resetForm();
       }, 500);
     } catch (error) {
@@ -55,58 +49,54 @@ const LoginForm = () => {
       setSubmitting(false);
     }
   };
+
   if (signUp) {
     return <RegisterForm onClose={() => setSignUp(false)} />;
   }
+
   return (
-    <div className="flex items-center justify-center">
-      <div className="w-full max-w-md p-8 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Login
-        </h2>
+    <div className="flex items-center justify-center min-h-screen ">
+      <div className="w-full max-w-md p-8  rounded-2xl shadow-md border">
+        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
         <Formik
           initialValues={initialValues}
           validationSchema={loginSchema}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting }) => (
-            <Form>
-              <div className="mb-4">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
+            <Form className="space-y-4">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium ">
                   Email
                 </label>
                 <Field
                   type="email"
                   name="email"
-                  className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input"
                   placeholder="Enter your email"
                 />
                 <ErrorMessage
                   name="email"
                   component="div"
-                  className="text-red-500 text-sm mt-1"
+                  className="text-sm text-red-500 mt-1"
                 />
               </div>
 
-              <div className="mb-4 relative">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
+              {/* Password */}
+              <div className="relative">
+                <label htmlFor="password" className="block text-sm font-medium">
                   Password
                 </label>
                 <Field
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input"
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-9 text-gray-500 cursor-pointer"
+                  className="absolute top-9 right-3 text-gray-500"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -114,29 +104,31 @@ const LoginForm = () => {
                 <ErrorMessage
                   name="password"
                   component="div"
-                  className="text-red-500 text-sm mt-1"
+                  className="text-sm text-red-500 mt-1"
                 />
               </div>
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-4 py-2 cursor-pointer text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300"
+                className="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:bg-blue-300"
               >
                 {isSubmitting ? "Logging in..." : "Login"}
               </button>
             </Form>
           )}
         </Formik>
+
+        {/* Signup Link */}
         <p className="mt-4 text-sm text-center text-gray-600">
-          {` Don't have an account?`}
-          <a
-            // href="/signup"
-            className="text-blue-500 hover:underline cursor-pointer"
-            onClick={() => setSignUp(true)}
+          Don&apos;t have an account?
+          <span
+            className="text-blue-500 hover:underline cursor-pointer ml-1"
+            onClick={() => navigate("/register")}
           >
             Sign up
-          </a>
+          </span>
         </p>
       </div>
       <ToastContainer />

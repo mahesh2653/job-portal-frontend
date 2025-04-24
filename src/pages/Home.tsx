@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Briefcase, Search, Building2 } from "lucide-react";
-import { useStore } from "../store-zustand";
+import { useAuthStore } from "../store-zustand/useAuthStore";
+import IRoles from "../types/role.type";
 
 function Home() {
-  const isDarkMode = useStore((state) => state.isDarkMode);
+  const { isAuthenticated, isDarkMode, user } = useAuthStore();
 
   return (
     <div
@@ -20,18 +21,22 @@ function Home() {
         </p>
 
         <div className="flex justify-center gap-6 flex-wrap">
-          <Link
-            to="/jobs"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg shadow transition"
-          >
-            Browse Jobs
-          </Link>
-          <Link
-            to="/register"
-            className="bg-gray-700 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg shadow transition"
-          >
-            Post a Job
-          </Link>
+          {isAuthenticated && user?.role === IRoles.JOB_SEEKER && (
+            <Link
+              to={isAuthenticated ? "/jobs" : "/login"}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg shadow transition"
+            >
+              Browse Jobs
+            </Link>
+          )}
+          {isAuthenticated && user?.role === IRoles.EMPLOYER && (
+            <Link
+              to={isAuthenticated ? "/add-job" : "/login"}
+              className="bg-gray-700 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg shadow transition"
+            >
+              Post a Job
+            </Link>
+          )}
         </div>
       </div>
 

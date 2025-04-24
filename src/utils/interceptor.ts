@@ -1,9 +1,10 @@
 import axios from "axios";
 
-const axiosApi = axios.create();
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const axiosApi = axios.create({ baseURL: backendUrl });
 if (typeof window !== "undefined") {
   axiosApi.interceptors.request.use((config) => {
-    const initialToken = localStorage.getItem("token");
+    const initialToken = localStorage.getItem("Token");
 
     config.headers["Authorization"] = initialToken?.startsWith("Bearer ")
       ? initialToken

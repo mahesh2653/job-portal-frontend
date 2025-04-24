@@ -1,48 +1,76 @@
-# 🚀 Job Portal - MERN Stack Assessment
+# 🚀 Job Portal - Frontend (React.js)
 
 ## 📌 Overview
 
-This project serves as a **starter template** for building a **fully functional Job Portal** using the **MERN (MongoDB, Express.js, React, Node.js) stack**.
+This repository contains the **frontend** for a fully functional **Job Portal** built with **React.js**. It is part of the complete **MERN Stack Job Portal** application.
 
-Candidates are expected to implement **both frontend and backend features** to deliver a **complete** job portal web application.
-
----
-
-## 🎯 Assessment Tasks
-
-### 1️⃣ User Authentication System
-
-- Implement user authentication using **JWT** or **session-based authentication**.
-- Support **Role-Based Access Control (RBAC)** for **Employers** and **Job Seekers**.
-
-### 2️⃣ Job Listings & Search
-
-- Develop **API endpoints** to **Create, Read, Update, and Delete (CRUD)** job listings.
-- Implement a **search and filtering system** for job listings.
-
-### 3️⃣ Job Application System
-
-- Allow **Job Seekers** to apply for jobs.
-- Enable **Employers** to **view applicants** for their job listings.
-
-### 4️⃣ Employer & Job Seeker Dashboards
-
-- **Employers Dashboard**: Manage **job postings** and **view applicants**.
-- **Job Seekers Dashboard**: Track **applied jobs** and manage applications.
-
-### 5️⃣ Extend Functionality & Design
-
-- Feel free to add **new features**, **improvements**, or **design enhancements** to showcase your skills.
+The frontend connects with the backend APIs to enable features like **authentication**, **role-based dashboards**, **job listings**, **job applications**, and more.
 
 ---
 
-## 📌 Submission Guidelines
+## 🔧 Tech Stack
 
-1. **Push your code** to a **GitHub repository**.
-2. Provide a **README.md** with:
-   - **Setup Instructions**
-   - **Features & Implementation Details**
-3. **Deploy the application** on any hosting platform (**Vercel, Render, etc.**).
-4. **Submit the live link** along with the **repository link**.
+- **React.js** (with React Router DOM)
+- **Zustand** (Global state management)
+- **Tailwind CSS** (UI Styling)
+- **Axios** (API Requests)
 
 ---
+
+## 🚀 Features
+
+### ✅ Authentication
+
+- JWT-based login & signup
+- Role-Based Access Control (RBAC)
+- Authenticated routing with protected routes
+
+### 🧑‍💼 Role-Based Dashboards
+
+- **Employer Dashboard**:
+
+  - Post jobs
+  - View & manage job listings
+  - View applicants
+  - View job
+
+- **Job Seeker Dashboard**:
+  - View & apply for jobs
+  - Track application status
+  - Manage profile and settings
+
+### 💼 Job Listings
+
+- Create, Read, Update, Delete (CRUD) Jobs _(Employer only)_
+- Search & Filter jobs by title, location, category, and type
+- Job detail view
+
+### 📄 Applications
+
+- Job Seekers can apply to jobs
+- Employers can view applicants for each job
+
+### 🎨 UI/UX Improvements
+
+- Light/Dark mode toggle (with Zustand)
+- Reusable components for cards, modals, buttons, etc.
+- Responsive design
+
+---
+
+## 📦 Folder Structure
+
+```bash
+├── public
+├── src
+│   ├── assets
+│   ├── components
+│   ├── constants
+│   ├── hooks
+│   ├── layouts
+│   ├── pages
+│   ├── services
+│   ├── store
+│   ├── utils
+│   └── App.jsx
+```

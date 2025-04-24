@@ -5,6 +5,7 @@ import {
   ColumnDef,
   flexRender,
 } from "@tanstack/react-table";
+import { useAuthStore } from "../store-zustand/useAuthStore";
 
 interface TableProps<T> {
   columns: ColumnDef<T, any>[];
@@ -20,9 +21,10 @@ const CustomTable = <T,>({
   data,
   title,
   addData,
-  buttonName,
+  buttonName = "Add",
   renderActions,
 }: TableProps<T>) => {
+  const { isDarkMode } = useAuthStore();
   const allColumns: ColumnDef<T, any>[] = renderActions
     ? [
         ...columns,
@@ -41,31 +43,51 @@ const CustomTable = <T,>({
   });
 
   return (
-    <div className="p-10 border-2 border-gray-200 rounded-md">
+    <div
+      className={`p-6 border rounded-lg shadow-sm ${
+        isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-300"
+      }`}
+    >
+      {/* Title + Action */}
       <div className="flex justify-between items-center mb-4">
         {title && (
-          <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+          <h2
+            className={`text-xl font-bold ${
+              isDarkMode ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
             {title}
-          </h1>
+          </h2>
         )}
         {addData && (
           <button
             onClick={addData}
-            className="text-white bg-blue-500 cursor-pointer hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
-            {buttonName ?? "Add"}
+            {buttonName}
           </button>
         )}
       </div>
+
+      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+        <table className="min-w-full border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="bg-gray-100">
+              <tr
+                key={headerGroup.id}
+                className={`${
+                  isDarkMode ? "bg-gray-800" : "bg-gray-100"
+                } text-left`}
+              >
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-2 text-left text-sm font-extrabold text-gray-700 border-b border-gray-400"
+                    className={`px-4 py-2 font-semibold ${
+                      isDarkMode ? "text-gray-300" : "text-gray-700"
+                    } border-b ${
+                      isDarkMode ? "dark:border-gray-600" : "border-gray-200"
+                    }`}
                   >
                     {header.isPlaceholder
                       ? null
@@ -84,13 +106,23 @@ const CustomTable = <T,>({
                 <tr
                   key={row.id}
                   className={`${
-                    row.index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                  } hover:bg-gray-100`}
+                    row.index % 2 === 0
+                      ? isDarkMode
+                        ? "bg-gray-900"
+                        : "bg-white"
+                      : isDarkMode
+                      ? "bg-gray-800"
+                      : "bg-gray-50"
+                  } hover:${isDarkMode ? "bg-gray-700" : "bg-gray-100"}`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-4 py-2 text-sm text-gray-600 border-b"
+                      className={`px-4 py-2 ${
+                        isDarkMode ? "text-gray-200" : "text-gray-700"
+                      } border-b ${
+                        isDarkMode ? "dark:border-gray-700" : "border-gray-200"
+                      }`}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -104,9 +136,11 @@ const CustomTable = <T,>({
               <tr>
                 <td
                   colSpan={allColumns.length}
-                  className="px-4 py-2 text-center font-bold text-sm text-gray-500"
+                  className={`text-center ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  } py-4 font-semibold`}
                 >
-                  * No task available *
+                  * No records found *
                 </td>
               </tr>
             )}

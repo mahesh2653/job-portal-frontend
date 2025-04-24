@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.input {
+  @apply w-full px-4 py-2 mt-1 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+.eye-toggle {
+  @apply absolute right-3 top-9 text-gray-500;
+}
+.error {
+  @apply text-red-500 text-sm mt-1;
+}

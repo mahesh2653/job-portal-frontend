@@ -1,26 +1,45 @@
 import { Link } from "react-router-dom";
 import { Sun, Moon, ChevronDown } from "lucide-react";
-import { useStore } from "../store-zustand";
 import { useState } from "react";
+import { useAuthStore } from "../store-zustand/useAuthStore";
+import IRoles from "../types/role.type";
 
-function Navbar() {
-  const { isDarkMode, toggleDarkMode, currentUser } = useStore();
+const { JOB_SEEKER } = IRoles;
+
+const Navbar = () => {
+  const { isDarkMode, toggleDarkMode, user, isAuthenticated, logout } =
+    useAuthStore();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
 
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
+  const navLinks = [
+    { name: "Dashboard", path: "/dashboard" },
+    { name: "Jobs", path: "/jobs" },
+  ];
+
+  const jobSeekerLinks = [
+    { name: "Saved Jobs", path: "/jobseeker/saved" },
+    { name: "Applied Jobs", path: "/jobseeker/applied" },
+  ];
+
+  const themeClass = isDarkMode
+    ? "bg-gray-800 text-white"
+    : "bg-white text-gray-900";
+  const dropdownThemeClass = isDarkMode
+    ? "bg-gray-700 text-white"
+    : "bg-white text-gray-800";
+
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 shadow-md ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-      }`}
-    >
+    <nav className={`fixed top-0 left-0 right-0 z-50 shadow-md ${themeClass}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <Link to="/" className="text-xl font-bold">
-            JobPortal
+            Job Portal
           </Link>
 
+          {/* Navigation Links & Actions */}
           <div className="flex items-center space-x-6">
             {/* Theme Toggle */}
             <button
@@ -30,12 +49,16 @@ function Navbar() {
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <Link to="/jobs" className="hover:text-blue-600">
-              Jobs
-            </Link>
+            {/* Authenticated User Links */}
+            {isAuthenticated &&
+              navLinks.map(({ path, name }) => (
+                <Link key={path} to={path} className="hover:text-blue-600">
+                  {name}
+                </Link>
+              ))}
 
-            {/* Dropdown only for Jobseekers */}
-            {currentUser?.role === "jobseeker" && (
+            {/* Job Seeker Dropdown */}
+            {user?.role === JOB_SEEKER && (
               <div className="relative">
                 <button
                   onClick={toggleDropdown}
@@ -44,40 +67,31 @@ function Navbar() {
                   My Jobs <ChevronDown className="ml-1 w-4 h-4" />
                 </button>
 
+                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div
-                    className={`absolute right-0 mt-2 w-40 rounded-lg shadow-lg ${
-                      isDarkMode
-                        ? "bg-gray-700 text-white"
-                        : "bg-white text-gray-800"
-                    }`}
+                    className={`absolute right-0 mt-2 w-40 rounded-lg shadow-lg ${dropdownThemeClass}`}
                   >
-                    <Link
-                      to="/jobseeker/saved"
-                      className="block px-4 py-2 hover:bg-blue-100 dark:hover:bg-gray-600"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Saved Jobs
-                    </Link>
-                    <Link
-                      to="/jobseeker/applied"
-                      className="block px-4 py-2 hover:bg-blue-100 dark:hover:bg-gray-600"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Applied Jobs
-                    </Link>
+                    {jobSeekerLinks.map(({ path, name }) => (
+                      <Link
+                        key={path}
+                        to={path}
+                        className="block px-4 py-2 hover:bg-blue-100 dark:hover:bg-gray-600"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        {name}
+                      </Link>
+                    ))}
                   </div>
                 )}
               </div>
             )}
 
-            {currentUser ? (
-              <Link
-                to={`/${currentUser.role}/dashboard`}
-                className="hover:text-blue-600"
-              >
-                Dashboard
-              </Link>
+            {/* Auth Buttons */}
+            {isAuthenticated ? (
+              <button onClick={logout} className="hover:text-blue-600">
+                Log out
+              </button>
             ) : (
               <Link to="/login" className="hover:text-blue-600">
                 Login
@@ -88,6 +102,6 @@ function Navbar() {
       </div>
     </nav>
   );
-}
+};
 
 export default Navbar;

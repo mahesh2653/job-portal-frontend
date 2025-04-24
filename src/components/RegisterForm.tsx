@@ -1,59 +1,40 @@
-"use client";
 import React, { useState } from "react";
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
-import * as Yup from "yup";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { toastError, toastInfo } from "../utils/toast";
 import { ToastContainer } from "react-toastify";
-
-const registerSchema = Yup.object().shape({
-  name: Yup.string()
-    .min(2, "Name must be at least 2 characters")
-    .required("Name is required"),
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords must match")
-    .required("Confirm Password is required"),
-});
+import registerSchema from "../validator/auth";
+import backendURL from "../constant/const";
+import axiosApi from "../utils/interceptor";
+import IRoles from "../types/role.type";
 
 const initialValues = {
   name: "",
   email: "",
+  mobileNo: "",
   password: "",
   confirmPassword: "",
+  role: "",
+  profile: "",
 };
 
 interface RegisterFormValues {
   onClose: () => void;
 }
 
-const url = "http://localhost:3006";
 const RegisterForm: React.FC<RegisterFormValues> = ({ onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  interface FormValues {
-    name: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-  }
-
   const handleSubmit = async (
-    values: FormValues,
-    { setSubmitting, resetForm }: FormikHelpers<FormValues>
+    values: typeof initialValues,
+    { setSubmitting, resetForm }: FormikHelpers<typeof initialValues>
   ) => {
     try {
       const { confirmPassword, ...rest } = values;
-      const response = await axios.post(`${url}/api/users/sign-up`, {
+      const response = await axiosApi.post(`/users/register`, {
         ...rest,
-        username: values.email,
       });
 
       toastInfo(response.data.message);
@@ -71,129 +52,187 @@ const RegisterForm: React.FC<RegisterFormValues> = ({ onClose }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-full max-w-md p-8  rounded-lg shadow-2xl border border-blue-700">
-        <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
+    <div className="flex items-center justify-center min-h-screen  px-4">
+      <div className="w-full max-w-2xl p-8 rounded-xl shadow-xl  border">
+        <h2 className="text-3xl font-bold text-center mb-8">Create Account</h2>
         <Formik
           initialValues={initialValues}
           validationSchema={registerSchema}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting }) => (
-            <Form>
-              <div className="mb-4">
-                <label htmlFor="name" className="block text-sm font-medium ">
-                  Full Name
-                </label>
-                <Field
-                  type="text"
-                  name="name"
-                  className="w-full px-4 py-2 mt-1 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your name"
-                />
-                <ErrorMessage
-                  name="name"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
+            <Form className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium">
+                    Full Name
+                  </label>
+                  <Field
+                    type="text"
+                    name="name"
+                    className="input"
+                    placeholder="Enter your name"
+                  />
+                  <ErrorMessage name="name" component="div" className="error" />
+                </div>
 
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium ">
-                  Email
-                </label>
-                <Field
-                  type="email"
-                  name="email"
-                  className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your email"
-                />
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium">
+                    Email
+                  </label>
+                  <Field
+                    type="email"
+                    name="email"
+                    className="input"
+                    placeholder="Enter your email"
+                  />
+                  <ErrorMessage
+                    name="email"
+                    component="div"
+                    className="error"
+                  />
+                </div>
 
-              <div className="mb-4 relative">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium "
-                >
-                  Password
-                </label>
-                <Field
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-9 text-gray-500"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor="mobileNo"
+                    className="block text-sm font-medium"
+                  >
+                    Phone Number
+                  </label>
+                  <Field
+                    type="text"
+                    name="mobileNo"
+                    className="input"
+                    placeholder="Enter your phone number"
+                  />
+                  <ErrorMessage
+                    name="mobileNo"
+                    component="div"
+                    className="error"
+                  />
+                </div>
 
-              <div className="mb-4 relative">
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium "
-                >
-                  Confirm Password
-                </label>
-                <Field
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-9 text-gray-500"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
-                </button>
-                <ErrorMessage
-                  name="confirmPassword"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
+                <div>
+                  <label
+                    htmlFor="profile"
+                    className="block text-sm font-medium"
+                  >
+                    Profile
+                  </label>
+                  <Field
+                    type="text"
+                    name="profile"
+                    className="input"
+                    placeholder="Enter your profile."
+                  />
+                  <ErrorMessage
+                    name="profile"
+                    component="div"
+                    className="error"
+                  />
+                </div>
+
+                <div className="relative">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium"
+                  >
+                    Password
+                  </label>
+                  <Field
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    className="input"
+                    placeholder="Enter password"
+                  />
+                  <button
+                    type="button"
+                    className="eye-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                  <ErrorMessage
+                    name="password"
+                    component="div"
+                    className="error"
+                  />
+                </div>
+
+                <div className="relative">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium"
+                  >
+                    Confirm Password
+                  </label>
+                  <Field
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    className="input"
+                    placeholder="Confirm password"
+                  />
+                  <button
+                    type="button"
+                    className="eye-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+                  <ErrorMessage
+                    name="confirmPassword"
+                    component="div"
+                    className="error"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium">Role</label>
+                  <div className="flex gap-6 mt-2">
+                    <label className="flex items-center gap-2">
+                      <Field type="radio" name="role" value={IRoles.EMPLOYER} />
+                      Job Hiring
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <Field
+                        type="radio"
+                        name="role"
+                        value={IRoles.JOB_SEEKER}
+                      />
+                      Job Seeker
+                    </label>
+                  </div>
+                  <ErrorMessage name="role" component="div" className="error" />
+                </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-4 py-2 cursor-pointer text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300"
+                className="w-full py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
               >
                 {isSubmitting ? "Signing Up..." : "Sign Up"}
               </button>
+
+              <p className="text-center text-sm text-gray-500 mt-4">
+                Already have an account?{" "}
+                <a
+                  onClick={onClose}
+                  className="text-blue-600 font-medium cursor-pointer hover:underline"
+                >
+                  Login
+                </a>
+              </p>
             </Form>
           )}
         </Formik>
-        <p className="mt-4 text-sm text-center animate-pulse text-gray-400">
-          Already have an account?{" "}
-          <a
-            className="text-blue-500 hover:underline cursor-pointer"
-            onClick={() => onClose()}
-          >
-            Login
-          </a>
-        </p>
+        <ToastContainer />
       </div>
-      <ToastContainer />
     </div>
   );
 };

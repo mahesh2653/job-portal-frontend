@@ -28,4 +28,10 @@ export enum ICategory {
   OPERATIONS = "OPERATIONS",
 }
 
+export enum IApplicationStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+}
+
 export default IJob;

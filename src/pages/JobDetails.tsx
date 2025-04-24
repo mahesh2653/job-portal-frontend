@@ -1,32 +1,52 @@
-import React from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Building2, Clock, Send, ArrowLeft } from "lucide-react";
-import { useStore } from "../store-zustand";
-import { dummyJobs } from "../data";
+import { useAuthStore } from "../store-zustand/useAuthStore";
+import IRoles from "../types/role.type";
+import { useEffect, useState } from "react";
+import { toastError } from "../utils/toast";
+import axiosApi from "../utils/interceptor";
+import { IApplicationStatus } from "../types/jobs.type";
+import CustomLoader from "../components/customloader";
+import JobApplicationModal from "../components/ApplicationModel";
 
 function JobDetails() {
+  const [job, setJob] = useState<any>();
+  const [isOpen, setIsOpen] = useState(false);
+  const { isDarkMode, user } = useAuthStore();
   const { id } = useParams();
   const navigate = useNavigate();
-  const isDarkMode = useStore((state) => state.isDarkMode);
-  const currentUser = useStore((state) => state.currentUser);
+  const getDataByJobId = async () => {
+    try {
+      const response = await axiosApi.get(`/jobs/${id}`);
+      console.log(response.data.data);
+      setJob(response.data.data);
+    } catch (error) {
+      toastError("Something went wrong");
+    }
+  };
 
-  const job = dummyJobs.find((j) => j.id === id);
+  const handelApply = async (data: any) => {
+    try {
+      const response = await axiosApi.post("/application", data);
+      console.log(response.data);
+    } catch (error) {
+      toastError("Something went wrong");
+    }
+  };
+
+  useEffect(() => {
+    getDataByJobId();
+  }, []);
 
   if (!job) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <h1 className="text-2xl font-bold text-red-500">Job not found</h1>
-      </div>
-    );
+    return <CustomLoader />;
   }
-
   return (
     <div
-      className={`min-h-screen px-6 py-10 ${
+      className={`min-h-screen px-6 py-10 pt-[80px] ${
         isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
       }`}
     >
-      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
@@ -35,7 +55,6 @@ function JobDetails() {
         Back to Jobs
       </button>
 
-      {/* Job Header Card */}
       <div
         className={`rounded-lg shadow-md p-8 mb-10 ${
           isDarkMode ? "bg-gray-800" : "bg-white"
@@ -60,7 +79,7 @@ function JobDetails() {
                   isDarkMode ? "bg-gray-700" : "bg-gray-200"
                 }`}
               >
-                {job.type}
+                {job.jobType}
               </span>
               <span
                 className={`px-3 py-1 text-sm rounded-full ${
@@ -74,17 +93,28 @@ function JobDetails() {
 
           <div className="text-right">
             <div className="text-2xl font-bold text-blue-600 mb-2">
-              {job.salary}
+              {job.salary.from} - {job.salary.to}
             </div>
             <div className="flex items-center text-gray-500 justify-end text-sm">
               <Clock className="w-4 h-4 mr-1" />
-              Posted {job.postedDate}
+              Posted {job.createdAt}
             </div>
           </div>
         </div>
 
-        {currentUser?.role === "jobseeker" && (
-          <button className="mt-6 bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2 w-full md:w-auto">
+        {user?.role === IRoles.JOB_SEEKER && (
+          <button
+            className="mt-6 bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2 w-full md:w-auto"
+            onClick={() => {
+              console.log("applyed successfully");
+              setIsOpen(true);
+              // handelApply({
+              //   jobId: id,
+              //   userId: user.id,
+              //   status: IApplicationStatus.PENDING,
+              // });
+            }}
+          >
             <Send className="w-5 h-5" />
             Apply Now
           </button>
@@ -102,13 +132,6 @@ function JobDetails() {
           >
             <h2 className="text-2xl font-bold mb-4">Job Description</h2>
             <p className="whitespace-pre-line mb-6">{job.description}</p>
-
-            <h3 className="text-xl font-bold mb-3">Requirements</h3>
-            <ul className="list-disc pl-6 space-y-2">
-              {job.requirements.map((req, index) => (
-                <li key={index}>{req}</li>
-              ))}
-            </ul>
           </div>
         </div>
 
@@ -127,12 +150,13 @@ function JobDetails() {
                 <p className="text-gray-500">{job.location}</p>
               </div>
             </div>
-            <p className="text-gray-500">
-              Leading technology company specializing in innovative solutions
-              for the digital world. Passionate about growth, culture, and
-              impact.
-            </p>
+            <p className="text-gray-500">{job.companyInfo}</p>
           </div>
+          <JobApplicationModal
+            job={job}
+            isOpen={isOpen}
+            onClose={() => setIsOpen(false)}
+          />
         </div>
       </div>
     </div>

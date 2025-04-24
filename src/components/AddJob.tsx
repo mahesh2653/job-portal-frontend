@@ -1,219 +1,279 @@
 import { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import axios from "axios";
-
-// Define initial values and validation schema for Formik
-const jobSchema = Yup.object().shape({
-  title: Yup.string().required("Title is required"),
-  category: Yup.string().required("Category is required"),
-  company: Yup.string().required("Company is required"),
-  description: Yup.string().required("Description is required"),
-  jobType: Yup.string().required("Job type is required"),
-  location: Yup.string().required("Location is required"),
-});
+import jobSchema from "../validator/jobs";
+import axiosApi from "../utils/interceptor";
+import { ICategory, IJobType } from "../types/jobs.type";
+import { useAuthStore } from "../store-zustand/useAuthStore";
+import { toastError, toastInfo, toastSuccess } from "../utils/toast";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const initialValues = {
   title: "",
-  category: "",
+  category: ICategory.ENGINEERING,
   company: "",
   description: "",
-  jobType: "FULL_TIME", // Default value for jobType
+  jobType: IJobType.FULL_TIME,
   location: "",
+  salary: { from: "", to: "" },
+  companyInfo: "",
 };
 
-const JobForm = ({ jobId }: { jobId?: string }) => {
+const JobForm = () => {
   const [jobData, setJobData] = useState(null);
+  const { jobId } = useParams();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
 
-  // Fetch job data if editing
   useEffect(() => {
     if (jobId) {
-      axios
-        .get(`/api/jobs/${jobId}`)
-        .then((response) => setJobData(response.data))
+      console.log(jobId);
+      axiosApi
+        .get(`/jobs/${jobId}`)
+        .then((response) => {
+          console.log(response.data.data);
+          setJobData(response.data.data);
+        })
         .catch((err) => console.error("Error fetching job data:", err));
     }
   }, [jobId]);
 
-  const handleSubmit = async (values: any, { setSubmitting }: any) => {
+  const handleSubmit = async (
+    values: any,
+    {
+      setSubmitting,
+      resetForm,
+    }: { setSubmitting: (isSubmitting: boolean) => void; resetForm: () => void }
+  ) => {
     try {
       if (jobId) {
-        // Edit job
-        await axios.put(`/api/jobs/${jobId}`, values);
-        alert("Job updated successfully!");
+        await axiosApi.put(`/jobs/${jobId}`, { ...values, postedBy: user?.id });
+        toastInfo("Job updated successfully!");
       } else {
-        // Add new job
-        await axios.post("/api/jobs", values);
-        alert("Job created successfully!");
+        console.log(values);
+        await axiosApi.post("/jobs", { ...values, postedBy: user?.id });
+        toastSuccess("Job created successfully!");
       }
+      resetForm();
+      navigate(-1);
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Error submitting form.");
+      toastError("Error submitting form.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-md shadow-lg">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-        {jobId ? "Edit Job" : "Add Job"}
-      </h2>
-      <Formik
-        initialValues={jobData || initialValues}
-        validationSchema={jobSchema}
-        onSubmit={handleSubmit}
-        enableReinitialize={true}
-      >
-        {({ isSubmitting }) => (
-          <Form>
-            {/* Title */}
-            <div className="mb-4">
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Job Title
-              </label>
-              <Field
-                type="text"
-                name="title"
-                className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Job Title"
-              />
-              <ErrorMessage
-                name="title"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
+    <div className="flex items-center justify-center min-h-screen px-4 py-12">
+      <div className="w-full max-w-4xl p-6 rounded-xl shadow-xl">
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Jobs
+        </button>
+        <h2 className="text-2xl font-bold text-center underline mb-6">
+          {jobId ? "Edit Job" : "Add Job"}
+        </h2>
+        <Formik
+          initialValues={jobData || initialValues}
+          validationSchema={jobSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize={true}
+        >
+          {({ isSubmitting }) => (
+            <Form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Title */}
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium ">
+                  Job Title
+                </label>
+                <Field
+                  type="text"
+                  name="title"
+                  placeholder="Job Title"
+                  className="input"
+                />
+                <ErrorMessage
+                  name="title"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              {/* Category */}
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium "
+                >
+                  Category
+                </label>
+                <Field as="select" name="category" className="input">
+                  {Object.values(ICategory).map((category, idx) => (
+                    <option value={category} key={idx}>
+                      {category}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage
+                  name="category"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
 
-            {/* Category */}
-            <div className="mb-4">
-              <label
-                htmlFor="category"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Category
-              </label>
-              <Field
-                type="text"
-                name="category"
-                className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Category"
-              />
-              <ErrorMessage
-                name="category"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
+              <div>
+                <label htmlFor="company" className="block text-sm font-medium ">
+                  Company
+                </label>
+                <Field
+                  type="text"
+                  name="company"
+                  placeholder="Company"
+                  className="input"
+                />
+                <ErrorMessage
+                  name="company"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="location"
+                  className="block text-sm font-medium "
+                >
+                  Location
+                </label>
+                <Field
+                  type="text"
+                  name="location"
+                  placeholder="Location"
+                  className="input"
+                />
+                <ErrorMessage
+                  name="location"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label
+                    htmlFor="salary.from"
+                    className="block text-sm font-medium "
+                  >
+                    Salary From
+                  </label>
+                  <Field
+                    type="text"
+                    name="salary.from"
+                    placeholder="Enter minimum salary"
+                    className="input"
+                  />
+                  <ErrorMessage
+                    name="salary.from"
+                    component="div"
+                    className="text-red-500 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="salary.to"
+                    className="block text-sm font-medium "
+                  >
+                    Salary To
+                  </label>
+                  <Field
+                    type="text"
+                    name="salary.to"
+                    placeholder="Enter maximum salary"
+                    className="input"
+                  />
+                  <ErrorMessage
+                    name="salary.to"
+                    component="div"
+                    className="text-red-500 text-sm mt-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="jobType" className="block text-sm font-medium ">
+                  Job Type
+                </label>
+                <Field as="select" name="jobType" className="input">
+                  {Object.values(IJobType).map((type, idx) => (
+                    <option value={type} key={idx}>
+                      {type}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage
+                  name="jobType"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
 
-            {/* Company */}
-            <div className="mb-4">
-              <label
-                htmlFor="company"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Company
-              </label>
-              <Field
-                type="text"
-                name="company"
-                className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Company"
-              />
-              <ErrorMessage
-                name="company"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="mb-4">
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Job Description
-              </label>
-              <Field
-                as="textarea"
-                name="description"
-                className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Job Description"
-              />
-              <ErrorMessage
-                name="description"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-
-            {/* Job Type */}
-            <div className="mb-4">
-              <label
-                htmlFor="jobType"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Job Type
-              </label>
-              <Field
-                as="select"
-                name="jobType"
-                className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="FULL_TIME">Full Time</option>
-                <option value="PART_TIME">Part Time</option>
-                <option value="CONTRACT">Contract</option>
-                <option value="INTERN">Intern</option>
-              </Field>
-              <ErrorMessage
-                name="jobType"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-
-            {/* Location */}
-            <div className="mb-4">
-              <label
-                htmlFor="location"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Location
-              </label>
-              <Field
-                type="text"
-                name="location"
-                className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Location"
-              />
-              <ErrorMessage
-                name="location"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <div className="mb-4">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {isSubmitting
-                  ? "Submitting..."
-                  : jobId
-                  ? "Update Job"
-                  : "Add Job"}
-              </button>
-            </div>
-          </Form>
-        )}
-      </Formik>
+              <div className="md:col-span-2">
+                <label
+                  htmlFor="companyInfo"
+                  className="block text-sm font-medium "
+                >
+                  Company Description
+                </label>
+                <Field
+                  as="textarea"
+                  name="companyInfo"
+                  placeholder="Company information "
+                  className="input"
+                  rows={4}
+                />
+                <ErrorMessage
+                  name="companyInfo"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium "
+                >
+                  Job Description
+                </label>
+                <Field
+                  as="textarea"
+                  name="description"
+                  placeholder="Job Description"
+                  className="input"
+                  rows={4}
+                />
+                <ErrorMessage
+                  name="description"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {isSubmitting
+                    ? "Submitting..."
+                    : jobId
+                    ? "Update Job"
+                    : "Add Job"}
+                </button>
+              </div>
+            </Form>
+          )}
+        </Formik>
+      </div>
     </div>
   );
 };

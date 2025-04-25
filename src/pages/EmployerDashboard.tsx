@@ -1,21 +1,89 @@
-import { dummyJobs, dummyApplications } from "../data";
 import { useAuthStore } from "../store-zustand/useAuthStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toastError } from "../utils/toast";
 import axiosApi from "../utils/interceptor";
 import StatCard from "../components/StatCard";
+import IStats from "../types/dashboard";
+import CustomLoader from "../components/customloader";
+import CustomTable from "../components/customTable";
+import { IApplicationStatus } from "../types/jobs.type";
+import JobApplicationModal from "../components/ApplicationModel";
+import { useNavigate } from "react-router-dom";
 
 const EmployerDashboard = () => {
   const { isDarkMode, user } = useAuthStore();
-  const employerJobs = dummyJobs;
-  const applications = dummyApplications.filter((app) =>
-    employerJobs.some((job) => job.id === app.jobId)
-  );
+  const [stats, setStats] = useState<null | IStats>(null);
+  const [applications, setApplication] = useState([]);
+  const [singleApplication, setSingelApplication] = useState<null | any>(null);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const columns = [
+    { header: "Name", accessorKey: "applicant.name" },
+    { header: "Position", accessorKey: "job.title" },
+    { header: "Message", accessorKey: "message" },
+
+    { header: "Company", accessorKey: "job.company" },
+    {
+      accessorKey: "createdAt",
+      header: "Created At",
+      cell: ({ row }: any) => {
+        const date = new Date(row.original.createdAt);
+        return date.toDateString();
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }: any) => {
+        const status = row.original.status;
+        return (
+          <div>
+            <span
+              className={`px-3 py-1 rounded-full text-sm ${
+                status === IApplicationStatus.PENDING
+                  ? "bg-yellow-100 text-yellow-800"
+                  : status === IApplicationStatus.ACCEPTED
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {status}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "select",
+      header: () => <div>Actions</div>,
+      cell: ({ row }: any) => (
+        <div className="flex  gap-2">
+          <button
+            onClick={() => {
+              setSingelApplication(row.original);
+              setIsOpen(true);
+            }}
+            className="text-orange-500 underline cursor-pointer"
+          >
+            Edit
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   const getDataByEmpId = async () => {
     try {
       const response = await axiosApi.get(`/jobs/employer/${user?.id}`);
       console.log(response.data.data);
+
+      setStats({
+        total: response.data.data.total,
+        ...response.data.data.stats,
+      });
+      setApplication(response.data.data.applications);
     } catch (error) {
       toastError("Something went wrong");
     }
@@ -25,6 +93,9 @@ const EmployerDashboard = () => {
     getDataByEmpId();
   }, []);
 
+  if (!stats) {
+    return <CustomLoader />;
+  }
   return (
     <div
       className={`${
@@ -37,33 +108,32 @@ const EmployerDashboard = () => {
           <p className="text-gray-400 text-lg">Welcome back, {user?.name}</p>
         </header>
 
-        {/* Stats */}
         <section className="grid md:grid-cols-4 gap-6">
           <StatCard
-            title="Active Jobs"
-            value={employerJobs.length}
-            color="text-blue-600"
-            isDarkMode={isDarkMode}
-            onClick={() => console.log("Active Jobs clicked")}
-          />
-          <StatCard
             title="Total Applications"
-            value={applications.length}
+            value={stats.PENDING + stats.ACCEPTED + stats.REJECTED}
             color="text-green-600"
             isDarkMode={isDarkMode}
             onClick={() => console.log("Total Applications clicked")}
           />
           <StatCard
-            title="Pending Review"
-            value={applications.filter((a) => a.status === "pending").length}
+            title="Accepted Application"
+            value={stats.ACCEPTED}
+            color="text-purple-600"
+            isDarkMode={isDarkMode}
+            onClick={() => console.log("Hired clicked")}
+          />
+          <StatCard
+            title="Pending Application"
+            value={stats.PENDING}
             color="text-yellow-600"
             isDarkMode={isDarkMode}
             onClick={() => console.log("Pending clicked")}
           />
           <StatCard
-            title="Hired"
-            value={applications.filter((a) => a.status === "accepted").length}
-            color="text-purple-600"
+            title="Rejected Application"
+            value={stats.REJECTED}
+            color="text-red-600"
             isDarkMode={isDarkMode}
             onClick={() => console.log("Hired clicked")}
           />
@@ -75,52 +145,26 @@ const EmployerDashboard = () => {
           }`}
         >
           <h2 className="text-xl font-semibold p-6 border-b">
-            Recent Applications
+            Application History
           </h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className={isDarkMode ? "bg-gray-700" : "bg-gray-100"}>
-                <tr>
-                  <th className="px-6 py-3 text-left">Job Title</th>
-                  <th className="px-6 py-3 text-left">Applicant</th>
-                  <th className="px-6 py-3 text-left">Date</th>
-                  <th className="px-6 py-3 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications.slice(0, 5).map((app) => {
-                  const job = employerJobs.find((j) => j.id === app.jobId);
-                  return (
-                    <tr
-                      key={app.id}
-                      className={`$${
-                        isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <td className="px-6 py-4">{job?.title}</td>
-                      <td className="px-6 py-4">John Doe</td>
-                      <td className="px-6 py-4">{app.appliedDate}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm ${
-                            app.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : app.status === "accepted"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {app.status.charAt(0).toUpperCase() +
-                            app.status.slice(1)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <CustomTable columns={columns} data={applications} />
           </div>
         </section>
+        {singleApplication && (
+          <JobApplicationModal
+            isOpen={isOpen}
+            job={singleApplication.job}
+            applicationId={singleApplication._id}
+            onClose={() => {
+              setIsOpen(false);
+              getDataByEmpId();
+            }}
+            userData={singleApplication.applicant}
+            initialMessage={singleApplication.message}
+            initialStatus={singleApplication.status}
+          />
+        )}
       </div>
     </div>
   );

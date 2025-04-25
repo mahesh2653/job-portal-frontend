@@ -7,6 +7,7 @@ import { useAuthStore } from "../store-zustand/useAuthStore";
 import { toastError, toastInfo, toastSuccess } from "../utils/toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import CustomLoader from "./customloader";
 
 const initialValues = {
   title: "",
@@ -27,11 +28,9 @@ const JobForm = () => {
 
   useEffect(() => {
     if (jobId) {
-      console.log(jobId);
       axiosApi
         .get(`/jobs/${jobId}`)
         .then((response) => {
-          console.log(response.data.data);
           setJobData(response.data.data);
         })
         .catch((err) => console.error("Error fetching job data:", err));
@@ -50,20 +49,20 @@ const JobForm = () => {
         await axiosApi.put(`/jobs/${jobId}`, { ...values, postedBy: user?.id });
         toastInfo("Job updated successfully!");
       } else {
-        console.log(values);
         await axiosApi.post("/jobs", { ...values, postedBy: user?.id });
         toastSuccess("Job created successfully!");
       }
       resetForm();
       navigate(-1);
     } catch (error) {
-      console.error("Error submitting form:", error);
       toastError("Error submitting form.");
     } finally {
       setSubmitting(false);
     }
   };
-
+  if (jobId && !jobData) {
+    return <CustomLoader />;
+  }
   return (
     <div className="flex items-center justify-center min-h-screen px-4 py-12">
       <div className="w-full max-w-4xl p-6 rounded-xl shadow-xl">

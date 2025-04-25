@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
-
 import { useAuthStore } from "../store-zustand/useAuthStore";
 import CustomTable from "../components/customTable";
-import { toastError } from "../utils/toast";
+import { toastError, toastInfo } from "../utils/toast";
 import axiosApi from "../utils/interceptor";
 import CustomLoader from "../components/customloader";
 import StatCard from "../components/StatCard";
-
-interface IStats {
-  total: number;
-  PENDING: number;
-  ACCEPTED: number;
-  REJECTED: number;
-}
+import IStats from "../types/dashboard";
+import { IApplicationStatus } from "../types/jobs.type";
+import JobApplicationModal from "../components/ApplicationModel";
 
 interface IApplication {
   _id: string;
@@ -26,6 +21,8 @@ function JobSeekerDashboard() {
   const [applications, setApplications] = useState<IApplication[]>([]);
   const [filteredApps, setFilteredApps] = useState<IApplication[]>([]);
   const [stats, setStats] = useState<IStats | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [singleApplication, setSingelApplication] = useState<null | any>(null);
 
   const { isDarkMode, user } = useAuthStore();
 
@@ -45,15 +42,77 @@ function JobSeekerDashboard() {
     if (status === "ALL") {
       setFilteredApps(applications);
     } else {
-      setFilteredApps(applications.filter((app) => app.status === status));
+      setFilteredApps(filteredApps.filter((app) => app.status === status));
     }
   };
 
   const columns = [
     { header: "Job Title", accessorKey: "jobId.title" },
     { header: "Company", accessorKey: "jobId.company" },
-    { header: "Applied Date", accessorKey: "createdAt" },
-    { header: "Status", accessorKey: "status" },
+    { header: "Message", accessorKey: "message" },
+    {
+      accessorKey: "createdAt",
+      header: "Applied At",
+      cell: ({ row }: any) => {
+        const date = new Date(row.original.createdAt);
+        return date.toDateString();
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }: any) => {
+        const status = row.original.status;
+        return (
+          <div>
+            <span
+              className={`px-3 py-1 rounded-full text-sm ${
+                status === IApplicationStatus.PENDING
+                  ? "bg-yellow-100 text-yellow-800"
+                  : status === IApplicationStatus.ACCEPTED
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {status}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "select",
+      header: () => <div>Actions</div>,
+      cell: ({ row }: any) => (
+        <div className="flex  gap-2">
+          <button
+            className="text-orange-500 underline cursor-pointer"
+            onClick={() => {
+              setSingelApplication(row.original);
+              setIsOpen(true);
+            }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={async () => {
+              if (
+                confirm("Are you sure you want to delete this Application?")
+              ) {
+                const response = await axiosApi.delete(
+                  `/applications/${row.original._id}`
+                );
+                toastInfo(response.data.message);
+                getUserData();
+              }
+            }}
+            className="text-red-700 underline"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
   ];
 
   useEffect(() => {
@@ -117,6 +176,21 @@ function JobSeekerDashboard() {
             <CustomTable columns={columns} data={filteredApps} />
           </div>
         </section>
+
+        {singleApplication && (
+          <JobApplicationModal
+            isOpen={isOpen}
+            job={singleApplication.jobId}
+            applicationId={singleApplication._id}
+            onClose={() => {
+              setIsOpen(false);
+              getUserData();
+            }}
+            userData={singleApplication.userId}
+            initialMessage={singleApplication.message}
+            initialStatus={singleApplication.status}
+          />
+        )}
       </div>
     </div>
   );

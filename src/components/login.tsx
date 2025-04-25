@@ -32,7 +32,6 @@ const LoginForm = () => {
     try {
       const response = await axiosApi.post(`/users/login`, values);
       toastInfo("Login successfully");
-      console.log(response.data);
       setToken(response.data.data.token);
       setUser(response.data.data.user);
 

@@ -28,7 +28,6 @@ function Jobs() {
           ? `${baseUrl}&postedBy=${user.id}`
           : baseUrl;
       const response = await axiosApi.get(url);
-      console.log(response.data);
 
       setJobs(response.data.data.jobs);
       setTotalPages(response.data.data.pages);
@@ -57,7 +56,6 @@ function Jobs() {
           <button
             onClick={() => {
               navigate(`/edit-job/${row.original._id}`);
-              console.log("MAHESH");
             }}
             className="text-orange-500 underline"
             disabled={Boolean(row.original.status)}

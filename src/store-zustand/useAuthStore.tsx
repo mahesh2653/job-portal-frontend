@@ -33,7 +33,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setUser: (user) => set({ user, isAuthenticated: !!user && !!get().token }),
   setToken: (token) => {
     localStorage.setItem("Token", token || "");
-    console.log("SET TOKEN", !!token && !!get().user);
     set({ token, isAuthenticated: !!token && !!get().user });
   },
 
@@ -51,7 +50,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (storedToken) {
       try {
         const response = await axiosApi.get(`/users/auth`);
-        console.log("MAHESH", response.data);
         set({
           user: response.data.data,
           token: storedToken,

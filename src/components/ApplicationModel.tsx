@@ -6,6 +6,7 @@ import axios from "axios";
 import { toastError, toastInfo } from "../utils/toast";
 import { useAuthStore } from "../store-zustand/useAuthStore";
 import axiosApi from "../utils/interceptor";
+import IRoles from "../types/role.type";
 
 const applicationSchema = Yup.object().shape({
   message: Yup.string()
@@ -20,6 +21,12 @@ interface Job {
   company: string;
 }
 
+interface IUser {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 interface JobApplicationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +34,7 @@ interface JobApplicationModalProps {
   applicationId?: string;
   initialMessage?: string;
   initialStatus?: string;
+  userData?: IUser;
 }
 
 const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
@@ -36,6 +44,7 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
   applicationId,
   initialMessage = "",
   initialStatus = "PENDING",
+  userData,
 }) => {
   const { user } = useAuthStore();
 
@@ -52,10 +61,9 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
     { setSubmitting }: { setSubmitting: (val: boolean) => void }
   ) => {
     try {
-      console.log(values);
       const payload = {
         ...values,
-        userId: user?.id,
+        userId: userData?._id,
         jobId: job._id,
       };
 
@@ -96,8 +104,8 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                     </label>
                     <input
                       type="text"
-                      value={user?.name || ""}
-                      readOnly
+                      value={userData?.name || ""}
+                      disabled
                       className="input"
                     />
                   </div>
@@ -107,8 +115,8 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                     </label>
                     <input
                       type="email"
-                      value={user?.email || ""}
-                      readOnly
+                      value={userData?.email || ""}
+                      disabled
                       className="input"
                     />
                   </div>
@@ -119,7 +127,7 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                     <input
                       type="text"
                       value={job?.title}
-                      readOnly
+                      disabled
                       className="input"
                     />
                   </div>
@@ -130,7 +138,8 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                     <input
                       type="text"
                       value={job?.company}
-                      readOnly
+                      // readOnly
+                      disabled
                       className="input"
                     />
                   </div>
@@ -141,7 +150,12 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                     >
                       Status
                     </label>
-                    <Field as="select" name="status" className="input">
+                    <Field
+                      as="select"
+                      name="status"
+                      className="input"
+                      disabled={user?.role === IRoles.JOB_SEEKER}
+                    >
                       <option value="PENDING">PENDING</option>
                       <option value="ACCEPTED">ACCEPTED</option>
                       <option value="REJECTED">REJECTED</option>
@@ -165,6 +179,7 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                       rows={4}
                       placeholder="Write your message to the employer..."
                       className="input"
+                      disabled={user?.role === IRoles.EMPLOYER}
                     />
                     <ErrorMessage
                       name="message"
